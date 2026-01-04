@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-dotenv
+chromadb
+unstructured[pdf]
+pdfminer.six
+pillow
+pypdf
+anthropic
+numpy

@@ -4,7 +4,8 @@
     "slug": "temp_init",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/icon.png",
+    "scheme": "hoa-app",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
