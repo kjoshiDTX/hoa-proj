@@ -1,3 +1,4 @@
+cat > App.tsx << 'EOF'
 import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -366,3 +367,4 @@ const styles = StyleSheet.create({
     color: colorsRGB.foreground,
   },
 });
+EOF
