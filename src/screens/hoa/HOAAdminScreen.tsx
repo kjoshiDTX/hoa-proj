@@ -7,6 +7,7 @@ import {
   ScrollView,
   SafeAreaView,
   TextInput,
+  Alert,
 } from 'react-native';
 import {
   ArrowLeft,
@@ -27,9 +28,11 @@ import {
   Link,
   MessageSquare,
   AlertCircle,
+  LogOut,
 } from 'lucide-react-native';
 import { Button } from '../../components/ui/Button';
 import { colorsRGB } from '../../theme/colors';
+import { useAuth } from '../../contexts/AuthContext';
 
 type AdminView =
   | 'hub'
@@ -47,6 +50,31 @@ interface HOAAdminScreenProps {
 export default function HOAAdminScreen({ onBack }: HOAAdminScreenProps) {
   const [currentView, setCurrentView] = useState<AdminView>('hub');
   const [searchQuery, setSearchQuery] = useState('');
+  const { signOut, userProfile } = useAuth();
+
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to sign out. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const users = [
     { id: '1', name: 'Sarah Johnson', email: 'sarah@willowcreek.hoa', role: 'Admin', status: 'active' },
@@ -373,6 +401,11 @@ export default function HOAAdminScreen({ onBack }: HOAAdminScreenProps) {
             board approval.
           </Text>
         </View>
+
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+          <LogOut size={20} color="#EF4444" />
+          <Text style={styles.signOutText}>Sign Out</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -555,226 +588,244 @@ const styles = StyleSheet.create({
   userEmail: {
     fontSize: 14,
     color: colorsRGB.mutedForeground,
-    marginTop: 2,
-  },
-  userRole: {
-    fontSize: 12,
-    color: colorsRGB.accent,
-    marginTop: 2,
-  },
-  editButton: {
-    padding: 8,
-    borderRadius: 8,
-  },
-  templateCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 16,
-    backgroundColor: colorsRGB.card,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#2A3342',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  templateIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: colorsRGB.secondary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  templateInfo: {
-    flex: 1,
-  },
-  templateName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colorsRGB.foreground,
-    marginBottom: 2,
-  },
-  templateDescription: {
-    fontSize: 14,
-    color: colorsRGB.mutedForeground,
-    marginBottom: 4,
-  },
-  templateEdited: {
-    fontSize: 12,
-    color: colorsRGB.mutedForeground,
-  },
-  templateActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  iconButton: {
-    padding: 8,
-    borderRadius: 8,
-  },
-  integrationCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 16,
-    backgroundColor: colorsRGB.card,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#2A3342',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  integrationIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: colorsRGB.secondary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  integrationIconConnected: {
-    backgroundColor: 'rgba(74, 157, 126, 0.15)',
-  },
-  integrationInfo: {
-    flex: 1,
-  },
-  integrationHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
-  },
-  integrationName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colorsRGB.foreground,
-  },
-  connectedBadge: {
-    backgroundColor: 'rgba(74, 157, 126, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  connectedText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#4A9D7E',
-  },
-  integrationDescription: {
-    fontSize: 14,
-    color: colorsRGB.mutedForeground,
-  },
-  integrationButton: {
-    marginTop: 0,
-    alignSelf: 'flex-start',
-  },
-  integrationButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#FFFFFF',
-  },
-  integrationButtonTextOutline: {
-    color: colorsRGB.primary,
-  },
-  infoCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    backgroundColor: 'rgba(245, 243, 239, 0.5)',
-    borderRadius: 16,
-    padding: 16,
-    marginTop: 12,
-  },
-  infoContent: {
-    flex: 1,
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colorsRGB.foreground,
-    marginBottom: 4,
-  },
-  infoText: {
-    fontSize: 14,
-    color: colorsRGB.mutedForeground,
-    lineHeight: 20,
-  },
-  adminCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    backgroundColor: colorsRGB.card,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#2A3342',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  adminIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: 'rgba(44, 62, 80, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  adminInfo: {
-    flex: 1,
-  },
-  adminHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  adminTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colorsRGB.foreground,
-  },
-  adminBadge: {
-    backgroundColor: colorsRGB.secondary,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  adminBadgeText: {
-    fontSize: 12,
-    color: colorsRGB.mutedForeground,
-  },
-  adminDescription: {
-    fontSize: 14,
-    color: colorsRGB.mutedForeground,
-    marginTop: 2,
-  },
-  quickInfo: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    backgroundColor: colorsRGB.card,
-    borderRadius: 16,
-    padding: 16,
-    marginTop: 12,
-    shadowColor: '#2A3342',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  quickInfoText: {
-    flex: 1,
-    fontSize: 14,
-    color: colorsRGB.mutedForeground,
-    lineHeight: 20,
-  },
-  quickInfoBold: {
-    fontWeight: '500',
-    color: colorsRGB.foreground,
-  },
+    marginTop: 2
+    ,
+},
+userRole: {
+fontSize: 12,
+color: colorsRGB.accent,
+marginTop: 2,
+},
+editButton: {
+padding: 8,
+borderRadius: 8,
+},
+templateCard: {
+flexDirection: 'row',
+alignItems: 'flex-start',
+gap: 16,
+backgroundColor: colorsRGB.card,
+borderRadius: 16,
+padding: 16,
+marginBottom: 12,
+shadowColor: '#2A3342',
+shadowOffset: { width: 0, height: 2 },
+shadowOpacity: 0.06,
+shadowRadius: 8,
+elevation: 3,
+},
+templateIcon: {
+width: 40,
+height: 40,
+borderRadius: 12,
+backgroundColor: colorsRGB.secondary,
+alignItems: 'center',
+justifyContent: 'center',
+},
+templateInfo: {
+flex: 1,
+},
+templateName: {
+fontSize: 16,
+fontWeight: '500',
+color: colorsRGB.foreground,
+marginBottom: 2,
+},
+templateDescription: {
+fontSize: 14,
+color: colorsRGB.mutedForeground,
+marginBottom: 4,
+},
+templateEdited: {
+fontSize: 12,
+color: colorsRGB.mutedForeground,
+},
+templateActions: {
+flexDirection: 'row',
+gap: 8,
+},
+iconButton: {
+padding: 8,
+borderRadius: 8,
+},
+integrationCard: {
+flexDirection: 'row',
+alignItems: 'flex-start',
+gap: 16,
+backgroundColor: colorsRGB.card,
+borderRadius: 16,
+padding: 16,
+marginBottom: 12,
+shadowColor: '#2A3342',
+shadowOffset: { width: 0, height: 2 },
+shadowOpacity: 0.06,
+shadowRadius: 8,
+elevation: 3,
+},
+integrationIcon: {
+width: 48,
+height: 48,
+borderRadius: 12,
+backgroundColor: colorsRGB.secondary,
+alignItems: 'center',
+justifyContent: 'center',
+},
+integrationIconConnected: {
+backgroundColor: 'rgba(74, 157, 126, 0.15)',
+},
+integrationInfo: {
+flex: 1,
+},
+integrationHeader: {
+flexDirection: 'row',
+alignItems: 'center',
+gap: 8,
+marginBottom: 4,
+},
+integrationName: {
+fontSize: 16,
+fontWeight: '500',
+color: colorsRGB.foreground,
+},
+connectedBadge: {
+backgroundColor: 'rgba(74, 157, 126, 0.15)',
+paddingHorizontal: 8,
+paddingVertical: 2,
+borderRadius: 4,
+},
+connectedText: {
+fontSize: 12,
+fontWeight: '500',
+color: '#4A9D7E',
+},
+integrationDescription: {
+fontSize: 14,
+color: colorsRGB.mutedForeground,
+},
+integrationButton: {
+marginTop: 0,
+alignSelf: 'flex-start',
+},
+integrationButtonText: {
+fontSize: 14,
+fontWeight: '500',
+color: '#FFFFFF',
+},
+integrationButtonTextOutline: {
+color: colorsRGB.primary,
+},
+infoCard: {
+flexDirection: 'row',
+alignItems: 'flex-start',
+gap: 12,
+backgroundColor: 'rgba(245, 243, 239, 0.5)',
+borderRadius: 16,
+padding: 16,
+marginTop: 12,
+},
+infoContent: {
+flex: 1,
+},
+infoTitle: {
+fontSize: 16,
+fontWeight: '500',
+color: colorsRGB.foreground,
+marginBottom: 4,
+},
+infoText: {
+fontSize: 14,
+color: colorsRGB.mutedForeground,
+lineHeight: 20,
+},
+adminCard: {
+flexDirection: 'row',
+alignItems: 'center',
+gap: 16,
+backgroundColor: colorsRGB.card,
+borderRadius: 16,
+padding: 16,
+marginBottom: 12,
+shadowColor: '#2A3342',
+shadowOffset: { width: 0, height: 2 },
+shadowOpacity: 0.06,
+shadowRadius: 8,
+elevation: 3,
+},
+adminIcon: {
+width: 48,
+height: 48,
+borderRadius: 12,
+backgroundColor: 'rgba(44, 62, 80, 0.1)',
+alignItems: 'center',
+justifyContent: 'center',
+},
+adminInfo: {
+flex: 1,
+},
+adminHeader: {
+flexDirection: 'row',
+alignItems: 'center',
+gap: 8,
+},
+adminTitle: {
+fontSize: 16,
+fontWeight: '500',
+color: colorsRGB.foreground,
+},
+adminBadge: {
+backgroundColor: colorsRGB.secondary,
+paddingHorizontal: 8,
+paddingVertical: 2,
+borderRadius: 10,
+},
+adminBadgeText: {
+fontSize: 12,
+color: colorsRGB.mutedForeground,
+},
+adminDescription: {
+fontSize: 14,
+color: colorsRGB.mutedForeground,
+marginTop: 2,
+},
+quickInfo: {
+flexDirection: 'row',
+alignItems: 'flex-start',
+gap: 12,
+backgroundColor: colorsRGB.card,
+borderRadius: 16,
+padding: 16,
+marginTop: 12,
+marginBottom: 12,
+shadowColor: '#2A3342',
+shadowOffset: { width: 0, height: 2 },
+shadowOpacity: 0.06,
+shadowRadius: 8,
+elevation: 3,
+},
+quickInfoText: {
+flex: 1,
+fontSize: 14,
+color: colorsRGB.mutedForeground,
+lineHeight: 20,
+},
+quickInfoBold: {
+fontWeight: '500',
+color: colorsRGB.foreground,
+},
+signOutButton: {
+flexDirection: 'row',
+alignItems: 'center',
+justifyContent: 'center',
+gap: 12,
+backgroundColor: colorsRGB.card,
+borderRadius: 12,
+padding: 16,
+borderWidth: 1,
+borderColor: 'rgba(239, 68, 68, 0.3)',
+},
+signOutText: {
+fontSize: 16,
+fontWeight: '600',
+color: '#EF4444',
+},
 });

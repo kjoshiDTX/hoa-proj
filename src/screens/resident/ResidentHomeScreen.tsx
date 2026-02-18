@@ -16,53 +16,40 @@ import {
   CreditCard,
   Sparkles,
 } from 'lucide-react-native';
-import { ActionCard } from '../../components/cards/ActionCard';
 import { Button } from '../../components/ui/Button';
 import { colorsRGB } from '../../theme/colors';
-
-interface NextAction {
-  type: 'upload' | 'appeal' | 'review';
-  caseId: string;
-  caseTitle: string;
-  dueDate: string;
-  urgency?: 'due-soon' | 'overdue';
-}
-
-interface DuesInfo {
-  balance: number;
-  dueDate: string;
-  status: 'due-soon' | 'overdue' | 'paid';
-}
+import { useAuth } from '../../contexts/AuthContext';
 
 interface ResidentHomeScreenProps {
-  userName?: string;
-  communityName?: string;
-  openCasesCount?: number;
-  nearestDeadline?: string;
-  nextAction?: NextAction | null;
-  duesInfo?: DuesInfo;
-  onNavigate: (tab: string) => void;
+  onNavigate: (view: string) => void;
 }
 
-export default function ResidentHomeScreen({
-  userName = 'Margaret',
-  communityName = 'Willow Creek Estates',
-  openCasesCount = 2,
-  nearestDeadline = 'Jan 15',
-  nextAction = {
+export default function ResidentHomeScreen({ onNavigate }: ResidentHomeScreenProps) {
+  const { userProfile } = useAuth();
+
+  const userName = userProfile?.full_name?.split(' ')[0] || 'Margaret';
+  const communityName = userProfile?.community_name || 'Willow Creek Estates';
+  const balance = userProfile?.balance || 128.50;
+
+  const openCasesCount = 2;
+  const nearestDeadline = 'Jan 15';
+  const nextAction = {
     type: 'upload',
     caseId: '1',
     caseTitle: 'Lawn Maintenance Required',
     dueDate: 'Jan 15',
     urgency: 'due-soon',
-  },
-  duesInfo = {
-    balance: 128.50,
+  };
+  const duesInfo = {
+    balance: balance,
     dueDate: 'Jan 15',
-    status: 'due-soon',
-  },
-  onNavigate,
-}: ResidentHomeScreenProps) {
+    status: 'due-soon' as const,
+  };
+
+  const currentHour = new Date().getHours();
+  const greeting =
+    currentHour < 12 ? 'Good morning' : currentHour < 18 ? 'Good afternoon' : 'Good evening';
+
   const formattedBalance = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -71,39 +58,35 @@ export default function ResidentHomeScreen({
   const statusConfig = {
     'due-soon': {
       label: 'Due soon',
+      color: '#F59E0B',
       bgColor: 'rgba(245, 158, 11, 0.15)',
-      textColor: '#F59E0B',
     },
     overdue: {
       label: 'Overdue',
+      color: '#EF4444',
       bgColor: 'rgba(239, 68, 68, 0.15)',
-      textColor: '#EF4444',
     },
     paid: {
       label: 'Paid',
+      color: '#4A9D7E',
       bgColor: 'rgba(74, 157, 126, 0.15)',
-      textColor: '#4A9D7E',
     },
   };
 
   const urgencyConfig = {
     'due-soon': {
       label: 'Due soon',
+      color: '#F59E0B',
       bgColor: 'rgba(245, 158, 11, 0.15)',
-      textColor: '#F59E0B',
     },
     overdue: {
       label: 'Overdue',
+      color: '#EF4444',
       bgColor: 'rgba(239, 68, 68, 0.15)',
-      textColor: '#EF4444',
     },
   };
 
-  const currentHour = new Date().getHours();
-  const greeting =
-    currentHour < 12 ? 'Good morning' : currentHour < 18 ? 'Good afternoon' : 'Good evening';
-
-  const getActionLabel = (type: NextAction['type']) => {
+  const getActionLabel = (type: string) => {
     switch (type) {
       case 'upload':
         return 'Upload a fix photo';
@@ -120,14 +103,14 @@ export default function ResidentHomeScreen({
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.greeting}>{greeting},</Text>
+          <Text style={styles.greetingText}>{greeting},</Text>
           <Text style={styles.userName}>{userName}</Text>
           <Text style={styles.communityName}>{communityName}</Text>
         </View>
@@ -136,13 +119,12 @@ export default function ResidentHomeScreen({
         <TouchableOpacity
           style={styles.duesBar}
           onPress={() => onNavigate('payments')}
-          activeOpacity={0.7}
         >
           <View style={styles.duesContent}>
             <CreditCard size={20} color={colorsRGB.mutedForeground} />
             <Text style={styles.duesLabel}>Dues:</Text>
             <Text style={styles.duesAmount}>{formattedBalance}</Text>
-            <Text style={styles.duesDue}>Due {duesInfo.dueDate}</Text>
+            <Text style={styles.duesDate}>Due {duesInfo.dueDate}</Text>
             <View
               style={[
                 styles.statusBadge,
@@ -150,10 +132,7 @@ export default function ResidentHomeScreen({
               ]}
             >
               <Text
-                style={[
-                  styles.statusBadgeText,
-                  { color: statusConfig[duesInfo.status].textColor },
-                ]}
+                style={[styles.statusText, { color: statusConfig[duesInfo.status].color }]}
               >
                 {statusConfig[duesInfo.status].label}
               </Text>
@@ -163,133 +142,128 @@ export default function ResidentHomeScreen({
         </TouchableOpacity>
 
         {/* Primary Action Cards */}
-        <View style={styles.section}>
+        <View style={styles.actionCardsSection}>
           {/* My Cases Card */}
           <TouchableOpacity
             style={[
               styles.casesCard,
-              hasNextAction && styles.casesCardUrgent,
+              hasNextAction && styles.casesCardActive,
             ]}
             onPress={() => onNavigate('cases')}
-            activeOpacity={0.7}
           >
-            <View
-              style={[
-                styles.casesIcon,
-                hasNextAction && styles.casesIconUrgent,
-              ]}
-            >
-              <FileText
-                size={24}
-                color={hasNextAction ? '#F59E0B' : colorsRGB.accent}
-              />
-            </View>
-
-            <View style={styles.casesContent}>
-              <View style={styles.casesTitleRow}>
-                <Text style={styles.casesTitle}>My Cases</Text>
-                {openCasesCount > 0 && (
-                  <View style={styles.casesBadge}>
-                    <Text style={styles.casesBadgeText}>{openCasesCount}</Text>
-                  </View>
-                )}
+            <View style={styles.casesCardContent}>
+              <View
+                style={[
+                  styles.casesIcon,
+                  hasNextAction
+                    ? { backgroundColor: 'rgba(245, 158, 11, 0.15)' }
+                    : { backgroundColor: 'rgba(44, 62, 80, 0.1)' },
+                ]}
+              >
+                <FileText
+                  size={24}
+                  color={hasNextAction ? '#F59E0B' : colorsRGB.accent}
+                />
               </View>
+              <View style={styles.casesInfo}>
+                <View style={styles.casesTitleRow}>
+                  <Text style={styles.casesTitle}>My Cases</Text>
+                  {openCasesCount > 0 && (
+                    <View style={styles.casesCountBadge}>
+                      <Text style={styles.casesCountText}>{openCasesCount}</Text>
+                    </View>
+                  )}
+                </View>
 
-              {hasNextAction && (
-                <>
-                  <View style={styles.actionNeededRow}>
-                    <Text style={styles.actionNeededText}>ACTION NEEDED</Text>
-                    {nextAction.urgency && (
-                      <View
-                        style={[
-                          styles.urgencyBadge,
-                          { backgroundColor: urgencyConfig[nextAction.urgency].bgColor },
-                        ]}
-                      >
-                        <Text
+                {hasNextAction && (
+                  <>
+                    <View style={styles.actionNeededRow}>
+                      <Text style={styles.actionNeededText}>ACTION NEEDED</Text>
+                      {nextAction.urgency && (
+                        <View
                           style={[
-                            styles.urgencyBadgeText,
-                            { color: urgencyConfig[nextAction.urgency].textColor },
+                            styles.urgencyBadge,
+                            { backgroundColor: urgencyConfig[nextAction.urgency].bgColor },
                           ]}
                         >
-                          {urgencyConfig[nextAction.urgency].label}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={styles.actionDescription}>
-                    {getActionLabel(nextAction.type)} · Due {nextAction.dueDate}
-                  </Text>
-                </>
-              )}
+                          <Text
+                            style={[
+                              styles.urgencyText,
+                              { color: urgencyConfig[nextAction.urgency].color },
+                            ]}
+                          >
+                            {urgencyConfig[nextAction.urgency].label}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.actionDescription}>
+                      {getActionLabel(nextAction.type)} · Due {nextAction.dueDate}
+                    </Text>
+                  </>
+                )}
 
-              <Text style={styles.casesSubtitle}>
-                {openCasesCount > 0
-                  ? `${openCasesCount} open · Next deadline: ${nearestDeadline}`
-                  : 'No open cases'}
-              </Text>
+                <Text style={styles.casesSubtitle}>
+                  {openCasesCount > 0
+                    ? `${openCasesCount} open · Next deadline: ${nearestDeadline}`
+                    : 'No open cases'}
+                </Text>
+              </View>
+              <ChevronRight size={20} color={colorsRGB.mutedForeground} />
             </View>
-
-            <ChevronRight size={20} color={colorsRGB.mutedForeground} />
           </TouchableOpacity>
 
           {/* Ask Sage Card */}
-          <ActionCard
-            title="Ask Sage"
-            subtitle="Get quick answers about community rules, tickets, and payments."
-            icon={<Sparkles size={24} color={colorsRGB.primary} />}
-            onPress={() => onNavigate('sage')}
-          />
+          <TouchableOpacity style={styles.sageCard} onPress={() => onNavigate('sage')}>
+            <View style={styles.sageIcon}>
+              <Sparkles size={24} color={colorsRGB.primary} />
+            </View>
+            <View style={styles.sageInfo}>
+              <Text style={styles.sageTitle}>Ask Sage</Text>
+              <Text style={styles.sageSubtitle}>
+                Get quick answers about community rules, tickets, and payments.
+              </Text>
+            </View>
+            <ChevronRight size={20} color={colorsRGB.mutedForeground} />
+          </TouchableOpacity>
         </View>
 
         {/* Latest Notices */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Latest Notices</Text>
+        <View style={styles.noticesSection}>
+          <View style={styles.noticesHeader}>
+            <Text style={styles.noticesTitle}>Latest Notices</Text>
             <TouchableOpacity
-              onPress={() => onNavigate('sage')}
               style={styles.viewAllButton}
+              onPress={() => onNavigate('sage')}
             >
               <Text style={styles.viewAllText}>View all</Text>
               <ChevronRight size={16} color={colorsRGB.accent} />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.noticesContainer}>
-            {/* Notice 1 */}
-            <TouchableOpacity
-              style={styles.noticeCard}
-              onPress={() => onNavigate('sage')}
-              activeOpacity={0.7}
-            >
+          <View style={styles.noticesList}>
+            <TouchableOpacity style={styles.noticeCard} onPress={() => onNavigate('sage')}>
               <View style={styles.noticeDot} />
               <View style={styles.noticeContent}>
-                <View style={styles.noticeCategory}>
+                <View style={styles.noticeCategoryBadge}>
                   <Text style={styles.noticeCategoryText}>Trash</Text>
                 </View>
                 <Text style={styles.noticeTitle}>Holiday Trash Schedule Change</Text>
-                <Text style={styles.noticeDescription} numberOfLines={2}>
+                <Text style={styles.noticeDescription}>
                   Collection moved to Monday, Jan 6
                 </Text>
               </View>
               <Text style={styles.noticeTime}>2h ago</Text>
             </TouchableOpacity>
 
-            {/* Notice 2 */}
-            <TouchableOpacity
-              style={styles.noticeCard}
-              onPress={() => onNavigate('sage')}
-              activeOpacity={0.7}
-            >
+            <TouchableOpacity style={styles.noticeCard} onPress={() => onNavigate('sage')}>
               <View style={[styles.noticeDot, styles.noticeDotInactive]} />
               <View style={styles.noticeContent}>
-                <View style={[styles.noticeCategory, styles.noticeCategoryInactive]}>
-                  <Text style={[styles.noticeCategoryText, styles.noticeCategoryTextInactive]}>
-                    Pool
-                  </Text>
+                <View style={styles.noticeCategoryBadgeInactive}>
+                  <Text style={styles.noticeCategoryTextInactive}>Pool</Text>
                 </View>
                 <Text style={styles.noticeTitle}>Pool Maintenance Reminder</Text>
-                <Text style={styles.noticeDescription} numberOfLines={2}>
+                <Text style={styles.noticeDescription}>
                   Pool closed Jan 8-10 for cleaning
                 </Text>
               </View>
@@ -307,12 +281,12 @@ export default function ResidentHomeScreen({
 
           <View style={styles.helpButtons}>
             <TouchableOpacity style={styles.helpButton}>
-              <Phone size={24} color={colorsRGB.foreground} />
+              <Phone size={24} color={colorsRGB.primary} />
               <Text style={styles.helpButtonText}>Call Office</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.helpButton}>
-              <MessageCircle size={24} color={colorsRGB.foreground} />
+              <MessageCircle size={24} color={colorsRGB.primary} />
               <Text style={styles.helpButtonText}>Send Message</Text>
             </TouchableOpacity>
           </View>
@@ -333,14 +307,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 24,
     paddingBottom: 100,
   },
   header: {
     marginBottom: 20,
   },
-  greeting: {
-    fontSize: 20,
+  greetingText: {
+    fontSize: 18,
     color: colorsRGB.mutedForeground,
   },
   userName: {
@@ -357,15 +332,15 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   duesBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: colorsRGB.card,
     borderWidth: 1,
     borderColor: colorsRGB.border,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     marginBottom: 20,
   },
   duesContent: {
@@ -384,7 +359,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colorsRGB.foreground,
   },
-  duesDue: {
+  duesDate: {
     fontSize: 14,
     color: colorsRGB.mutedForeground,
   },
@@ -393,43 +368,41 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
   },
-  statusBadgeText: {
+  statusText: {
     fontSize: 12,
     fontWeight: '600',
   },
-  section: {
+  actionCardsSection: {
     gap: 16,
     marginBottom: 24,
   },
   casesCard: {
     backgroundColor: colorsRGB.card,
     borderRadius: 16,
-    padding: 20,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 16,
+    padding: 16,
     shadowColor: '#2A3342',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 3,
   },
-  casesCardUrgent: {
+  casesCardActive: {
     borderLeftWidth: 4,
     borderLeftColor: '#F59E0B',
+  },
+  casesCardContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
   },
   casesIcon: {
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: 'rgba(74, 157, 126, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  casesIconUrgent: {
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
-  },
-  casesContent: {
+  casesInfo: {
     flex: 1,
   },
   casesTitleRow: {
@@ -443,13 +416,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colorsRGB.foreground,
   },
-  casesBadge: {
+  casesCountBadge: {
     backgroundColor: 'rgba(245, 158, 11, 0.15)',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
   },
-  casesBadgeText: {
+  casesCountText: {
     fontSize: 14,
     fontWeight: '600',
     color: '#F59E0B',
@@ -471,7 +444,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
   },
-  urgencyBadgeText: {
+  urgencyText: {
     fontSize: 12,
     fontWeight: '500',
   },
@@ -484,13 +457,50 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colorsRGB.mutedForeground,
   },
-  sectionHeader: {
+  sageCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 16,
+    backgroundColor: colorsRGB.card,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#2A3342',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  sageIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: 'rgba(44, 62, 80, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sageInfo: {
+    flex: 1,
+  },
+  sageTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colorsRGB.foreground,
+    marginBottom: 4,
+  },
+  sageSubtitle: {
+    fontSize: 14,
+    color: colorsRGB.mutedForeground,
+  },
+  noticesSection: {
+    marginBottom: 24,
+  },
+  noticesHeader: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 16,
   },
-  sectionTitle: {
+  noticesTitle: {
     fontSize: 20,
     fontWeight: '400',
     color: colorsRGB.foreground,
@@ -506,16 +516,16 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: colorsRGB.accent,
   },
-  noticesContainer: {
+  noticesList: {
     gap: 12,
   },
   noticeCard: {
-    backgroundColor: colorsRGB.card,
-    borderRadius: 16,
-    padding: 16,
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 16,
+    backgroundColor: colorsRGB.card,
+    borderRadius: 16,
+    padding: 16,
     shadowColor: '#2A3342',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -535,42 +545,48 @@ const styles = StyleSheet.create({
   noticeContent: {
     flex: 1,
   },
-  noticeCategory: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(74, 157, 126, 0.1)',
+  noticeCategoryBadge: {
+    backgroundColor: 'rgba(44, 62, 80, 0.1)',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,
+    alignSelf: 'flex-start',
     marginBottom: 4,
-  },
-  noticeCategoryInactive: {
-    backgroundColor: colorsRGB.muted,
   },
   noticeCategoryText: {
     fontSize: 12,
     fontWeight: '600',
     color: colorsRGB.accent,
   },
+  noticeCategoryBadgeInactive: {
+    backgroundColor: colorsRGB.muted,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+  },
   noticeCategoryTextInactive: {
+    fontSize: 12,
+    fontWeight: '600',
     color: colorsRGB.mutedForeground,
   },
   noticeTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: colorsRGB.foreground,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   noticeDescription: {
     fontSize: 16,
     color: colorsRGB.mutedForeground,
-    lineHeight: 22,
   },
   noticeTime: {
     fontSize: 14,
     color: colorsRGB.mutedForeground,
   },
   helpSection: {
-    backgroundColor: 'rgba(245, 243, 239, 0.5)',
+    backgroundColor: 'rgba(245, 243, 239, 0.3)',
     borderRadius: 16,
     padding: 20,
     shadowColor: '#2A3342',
@@ -598,16 +614,16 @@ const styles = StyleSheet.create({
   },
   helpButton: {
     flex: 1,
-    backgroundColor: colorsRGB.card,
-    borderWidth: 2,
-    borderColor: colorsRGB.primary,
+    backgroundColor: colorsRGB.background,
+    borderWidth: 1,
+    borderColor: colorsRGB.border,
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
     gap: 8,
   },
   helpButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
     color: colorsRGB.foreground,
   },

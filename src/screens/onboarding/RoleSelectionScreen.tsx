@@ -1,84 +1,65 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-} from 'react-native';
-import { Home, Shield, ChevronRight } from 'lucide-react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Home, Users, LogOut } from 'lucide-react-native';
 import { colorsRGB } from '../../theme/colors';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface RoleSelectionScreenProps {
-  onSelectRole: (role: 'resident' | 'hoa') => void;
+  onSelectRole?: (role: 'resident' | 'hoa') => void;
 }
 
 export default function RoleSelectionScreen({ onSelectRole }: RoleSelectionScreenProps) {
+  const { signOut, userProfile } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={colorsRGB.background} />
-      
       <View style={styles.content}>
-        {/* Logo / Brand */}
         <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Home size={40} color={colorsRGB.primaryForeground} />
-          </View>
-          <Text style={styles.title}>CommunityHub</Text>
-          <Text style={styles.subtitle}>Your HOA compliance made simple</Text>
+          <Text style={styles.title}>Welcome{userProfile?.full_name ? `, ${userProfile.full_name}` : ''}</Text>
+          <Text style={styles.subtitle}>Choose your role to continue</Text>
         </View>
 
-        {/* Role Selection */}
-        <View style={styles.roleSection}>
-          <Text style={styles.question}>How will you use the app?</Text>
+        <View style={styles.roleContainer}>
+          <TouchableOpacity
+            style={styles.roleCard}
+            onPress={() => onSelectRole?.('resident')}
+          >
+            <View style={styles.roleIconContainer}>
+              <Home size={48} color={colorsRGB.primary} />
+            </View>
+            <Text style={styles.roleTitle}>Resident</Text>
+            <Text style={styles.roleDescription}>
+              View cases, submit reports, and manage your property
+            </Text>
+          </TouchableOpacity>
 
-          <View style={styles.optionsContainer}>
-            {/* Resident Option */}
-            <TouchableOpacity
-              style={styles.roleCard}
-              onPress={() => onSelectRole('resident')}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.iconContainer, styles.residentIcon]}>
-                <Home size={32} color={colorsRGB.accent} />
-              </View>
-              <View style={styles.roleTextContainer}>
-                <Text style={styles.roleTitle}>I'm a Resident</Text>
-                <Text style={styles.roleDescription}>
-                  View my cases, ask questions, submit fixes
-                </Text>
-              </View>
-              <ChevronRight size={24} color={colorsRGB.mutedForeground} />
-            </TouchableOpacity>
-
-            {/* HOA Leader Option */}
-            <TouchableOpacity
-              style={styles.roleCard}
-              onPress={() => onSelectRole('hoa')}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.iconContainer, styles.hoaIcon]}>
-                <Shield size={32} color={colorsRGB.primary} />
-              </View>
-              <View style={styles.roleTextContainer}>
-                <Text style={styles.roleTitle}>I'm an HOA Leader</Text>
-                <Text style={styles.roleDescription}>
-                  Manage violations, review cases, admin tools
-                </Text>
-              </View>
-              <ChevronRight size={24} color={colorsRGB.mutedForeground} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.roleCard}
+            onPress={() => onSelectRole?.('hoa')}
+          >
+            <View style={styles.roleIconContainer}>
+              <Users size={48} color={colorsRGB.primary} />
+            </View>
+            <Text style={styles.roleTitle}>HOA Board</Text>
+            <Text style={styles.roleDescription}>
+              Review cases, manage community, and oversee compliance
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            Already have an account?{' '}
-            <Text style={styles.signInLink}>Sign in</Text>
-          </Text>
-        </View>
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+          <LogOut size={20} color={colorsRGB.mutedForeground} />
+          <Text style={styles.signOutText}>Sign Out</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -91,104 +72,72 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 48,
+    padding: 24,
+    justifyContent: 'center',
   },
   header: {
-    alignItems: 'center',
     marginBottom: 48,
-  },
-  logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
-    backgroundColor: colorsRGB.primary,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
   },
   title: {
-    fontFamily: 'System',
-    fontSize: 40,
+    fontSize: 32,
     fontWeight: '400',
     color: colorsRGB.foreground,
     marginBottom: 8,
     letterSpacing: -0.5,
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: 20,
+    fontSize: 16,
     color: colorsRGB.mutedForeground,
     textAlign: 'center',
   },
-  roleSection: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  question: {
-    fontFamily: 'System',
-    fontSize: 28,
-    fontWeight: '400',
-    color: colorsRGB.foreground,
-    textAlign: 'center',
-    marginBottom: 32,
-    letterSpacing: -0.5,
-  },
-  optionsContainer: {
+  roleContainer: {
     gap: 16,
   },
   roleCard: {
     backgroundColor: colorsRGB.card,
-    borderRadius: 16,
-    padding: 20,
-    flexDirection: 'row',
+    borderRadius: 20,
+    padding: 32,
     alignItems: 'center',
-    gap: 20,
-    minHeight: 100,
     shadowColor: '#2A3342',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
   },
-  iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
+  roleIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(44, 62, 80, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  residentIcon: {
-    backgroundColor: 'rgba(74, 157, 126, 0.15)',
-  },
-  hoaIcon: {
-    backgroundColor: 'rgba(44, 62, 80, 0.15)',
-  },
-  roleTextContainer: {
-    flex: 1,
+    marginBottom: 16,
   },
   roleTitle: {
-    fontFamily: 'System',
-    fontSize: 20,
-    fontWeight: '400',
+    fontSize: 24,
+    fontWeight: '600',
     color: colorsRGB.foreground,
-    marginBottom: 4,
-    letterSpacing: -0.3,
+    marginBottom: 8,
   },
   roleDescription: {
+    fontSize: 14,
+    color: colorsRGB.mutedForeground,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  signOutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 32,
+    padding: 16,
+  },
+  signOutText: {
     fontSize: 16,
     color: colorsRGB.mutedForeground,
-    lineHeight: 22,
-  },
-  footer: {
-    alignItems: 'center',
-    marginTop: 32,
-  },
-  footerText: {
-    fontSize: 15,
-    color: colorsRGB.mutedForeground,
-  },
-  signInLink: {
-    color: colorsRGB.primary,
     fontWeight: '500',
   },
 });

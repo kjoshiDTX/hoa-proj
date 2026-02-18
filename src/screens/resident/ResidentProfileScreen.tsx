@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import {
   User,
@@ -26,45 +27,38 @@ import {
   CreditCard,
 } from 'lucide-react-native';
 import { colorsRGB } from '../../theme/colors';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface ResidentProfileScreenProps {
-  onNavigate?: (view: string) => void;
-  userName?: string;
-  address?: string;
-  communityName?: string;
-  email?: string;
-  phone?: string;
+  onNavigate: (view: string) => void;
 }
 
 interface ProfileRowProps {
   icon: any;
   label: string;
   value?: string;
-  onPress?: () => void;
+  onClick?: () => void;
   showArrow?: boolean;
   danger?: boolean;
 }
 
-function ProfileRow({ icon: Icon, label, value, onPress, showArrow = true, danger = false }: ProfileRowProps) {
+function ProfileRow({ icon: Icon, label, value, onClick, showArrow = true, danger = false }: ProfileRowProps) {
   return (
     <TouchableOpacity
       style={styles.profileRow}
-      onPress={onPress}
-      activeOpacity={0.7}
+      onPress={onClick}
+      disabled={!onClick}
     >
-      <View
-        style={[
-          styles.rowIcon,
-          danger && styles.rowIconDanger,
-        ]}
-      >
+      <View style={[styles.profileRowIcon, danger && styles.profileRowIconDanger]}>
         <Icon size={20} color={danger ? '#EF4444' : colorsRGB.mutedForeground} />
       </View>
-      <View style={styles.rowContent}>
-        <Text style={[styles.rowLabel, danger && styles.rowLabelDanger]}>
+      <View style={styles.profileRowContent}>
+        <Text style={[styles.profileRowLabel, danger && styles.profileRowLabelDanger]}>
           {label}
         </Text>
-        {value && <Text style={styles.rowValue}>{value}</Text>}
+        {value && (
+          <Text style={styles.profileRowValue}>{value}</Text>
+        )}
       </View>
       {showArrow && (
         <ChevronRight size={20} color={colorsRGB.mutedForeground} />
@@ -82,19 +76,50 @@ function ProfileSection({ title, children }: ProfileSectionProps) {
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.sectionCard}>{children}</View>
+      <View style={styles.sectionCard}>
+        {children}
+      </View>
     </View>
   );
 }
 
-export default function ResidentProfileScreen({
-  onNavigate,
-  userName = 'Margaret Johnson',
-  address = '123 Willow Lane',
-  communityName = 'Willow Creek Estates',
-  email = 'margaret.j@email.com',
-  phone = '(555) 123-4567',
-}: ResidentProfileScreenProps) {
+export default function ResidentProfileScreen({ onNavigate }: ResidentProfileScreenProps) {
+  const { signOut, userProfile } = useAuth();
+
+  const userName = userProfile?.full_name || 'Resident User';
+  const address = userProfile?.property_address || '123 Willow Lane';
+  const unitNumber = userProfile?.unit_number || '';
+  const communityName = userProfile?.community_name || 'Willow Creek Estates';
+  const email = userProfile?.email || 'user@email.com';
+  const phone = userProfile?.phone || '(555) 123-4567';
+  const balance = userProfile?.balance || 0;
+
+  const fullAddress = unitNumber ? `${address}, ${unitNumber}` : address;
+
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to sign out. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -108,10 +133,10 @@ export default function ResidentProfileScreen({
             <View style={styles.avatar}>
               <User size={40} color={colorsRGB.accent} />
             </View>
-            <View style={styles.headerText}>
+            <View style={styles.userInfo}>
               <Text style={styles.userName}>{userName}</Text>
-              <Text style={styles.userAddress}>{address}</Text>
-              <View style={styles.communityRow}>
+              <Text style={styles.userAddress}>{fullAddress}</Text>
+              <View style={styles.communityBadge}>
                 <Text style={styles.communityName}>{communityName}</Text>
                 <View style={styles.verifiedBadge}>
                   <CheckCircle2 size={12} color="#4A9D7E" />
@@ -127,62 +152,72 @@ export default function ResidentProfileScreen({
           <ProfileRow
             icon={Home}
             label="Address"
-            value={`${address}, ${communityName}`}
-            onPress={() => {}}
+            value={`${fullAddress}, ${communityName}`}
+            onClick={() => {}}
           />
         </ProfileSection>
 
         {/* Contact Info */}
         <ProfileSection title="CONTACT INFO">
-          <ProfileRow icon={Phone} label="Phone" value={phone} onPress={() => {}} />
-          <ProfileRow icon={Mail} label="Email" value={email} onPress={() => {}} />
+          <ProfileRow
+            icon={Phone}
+            label="Phone"
+            value={phone}
+            onClick={() => {}}
+          />
+          <ProfileRow
+            icon={Mail}
+            label="Email"
+            value={email}
+            onClick={() => {}}
+          />
           <ProfileRow
             icon={MessageSquare}
             label="Preferred Contact Method"
             value="Email"
-            onPress={() => {}}
+            onClick={() => {}}
           />
         </ProfileSection>
 
-        {/* Dues & Payments */}
+        {/* Billing */}
         <ProfileSection title="BILLING">
           <ProfileRow
             icon={CreditCard}
             label="Dues & Payments"
-            value="Balance: $128.50"
-            onPress={() => onNavigate?.('payments')}
+            value={`Balance: $${balance.toFixed(2)}`}
+            onClick={() => onNavigate('payments')}
           />
         </ProfileSection>
 
-        {/* Notifications & Notices */}
+        {/* Notifications & Updates */}
         <ProfileSection title="NOTIFICATIONS & UPDATES">
           <ProfileRow
             icon={Bell}
             label="Notification Settings"
             value="Push, Email enabled"
-            onPress={() => onNavigate?.('notification-settings')}
+            onClick={() => onNavigate('notification-settings')}
           />
           <ProfileRow
             icon={MessageSquare}
             label="Notices"
             value="2 unread"
-            onPress={() => onNavigate?.('notices')}
+            onClick={() => onNavigate('notices')}
           />
         </ProfileSection>
 
-        {/* Help & Contact */}
+        {/* Help & Contact HOA */}
         <ProfileSection title="HELP & CONTACT HOA">
           <ProfileRow
             icon={Phone}
             label="Call HOA Office"
             value="(555) 987-6543"
-            onPress={() => {}}
+            onClick={() => {}}
           />
           <ProfileRow
             icon={Mail}
             label="Email HOA"
             value="office@willowcreek.hoa"
-            onPress={() => {}}
+            onClick={() => {}}
           />
           <ProfileRow
             icon={Clock}
@@ -194,7 +229,7 @@ export default function ResidentProfileScreen({
             icon={HelpCircle}
             label="After-Hours Emergencies"
             value="Call (555) 911-0000"
-            onPress={() => {}}
+            onClick={() => {}}
           />
         </ProfileSection>
 
@@ -204,28 +239,47 @@ export default function ResidentProfileScreen({
             icon={Type}
             label="Text Size"
             value="Default"
-            onPress={() => onNavigate?.('text-size')}
+            onClick={() => {}}
           />
-          <ProfileRow icon={Eye} label="High Contrast" value="Off" onPress={() => {}} />
-          <ProfileRow icon={Zap} label="Reduce Motion" value="Off" onPress={() => {}} />
+          <ProfileRow
+            icon={Eye}
+            label="High Contrast"
+            value="Off"
+            onClick={() => {}}
+          />
+          <ProfileRow
+            icon={Zap}
+            label="Reduce Motion"
+            value="Off"
+            onClick={() => {}}
+          />
         </ProfileSection>
 
-        {/* Security */}
+        {/* Security & Account */}
         <ProfileSection title="SECURITY & ACCOUNT">
           <ProfileRow
             icon={Shield}
             label="Face ID / Touch ID"
             value="Enabled"
-            onPress={() => {}}
+            onClick={() => {}}
           />
-          <ProfileRow icon={Shield} label="Change Password" onPress={() => {}} />
-          <ProfileRow icon={LogOut} label="Sign Out" danger onPress={() => {}} />
+          <ProfileRow
+            icon={Shield}
+            label="Change Password"
+            onClick={() => {}}
+          />
+          <ProfileRow
+            icon={LogOut}
+            label="Sign Out"
+            danger
+            onClick={handleSignOut}
+          />
         </ProfileSection>
 
         {/* App Info */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>Community Connect v1.0.0</Text>
-          <Text style={styles.footerText}>© 2026 Willow Creek Estates HOA</Text>
+          <Text style={styles.footerText}>© 2026 {communityName} HOA</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -241,7 +295,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 24,
     paddingBottom: 100,
   },
   header: {
@@ -256,29 +311,29 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 16,
-    backgroundColor: 'rgba(74, 157, 126, 0.15)',
+    backgroundColor: 'rgba(44, 62, 80, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerText: {
+  userInfo: {
     flex: 1,
   },
   userName: {
     fontSize: 28,
     fontWeight: '400',
     color: colorsRGB.foreground,
-    marginBottom: 4,
     letterSpacing: -0.5,
   },
   userAddress: {
     fontSize: 16,
     color: colorsRGB.mutedForeground,
-    marginBottom: 4,
+    marginTop: 2,
   },
-  communityRow: {
+  communityBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    marginTop: 4,
   },
   communityName: {
     fontSize: 14,
@@ -292,7 +347,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(74, 157, 126, 0.1)',
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: 12,
   },
   verifiedText: {
     fontSize: 12,
@@ -306,14 +361,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: colorsRGB.mutedForeground,
-    letterSpacing: 1,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
     marginBottom: 8,
-    paddingLeft: 4,
+    paddingHorizontal: 4,
   },
   sectionCard: {
     backgroundColor: colorsRGB.card,
     borderRadius: 16,
-    padding: 4,
+    overflow: 'hidden',
     shadowColor: '#2A3342',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -325,12 +381,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 16,
     paddingVertical: 16,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(213, 217, 224, 0.5)',
+    paddingHorizontal: 16,
     minHeight: 56,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
   },
-  rowIcon: {
+  profileRowIcon: {
     width: 40,
     height: 40,
     borderRadius: 12,
@@ -338,21 +394,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rowIconDanger: {
+  profileRowIconDanger: {
     backgroundColor: 'rgba(239, 68, 68, 0.1)',
   },
-  rowContent: {
+  profileRowContent: {
     flex: 1,
   },
-  rowLabel: {
+  profileRowLabel: {
     fontSize: 16,
     fontWeight: '500',
     color: colorsRGB.foreground,
   },
-  rowLabelDanger: {
+  profileRowLabelDanger: {
     color: '#EF4444',
   },
-  rowValue: {
+  profileRowValue: {
     fontSize: 14,
     color: colorsRGB.mutedForeground,
     marginTop: 2,
@@ -361,10 +417,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 32,
     paddingBottom: 16,
+    gap: 4,
   },
   footerText: {
     fontSize: 14,
     color: colorsRGB.mutedForeground,
-    marginTop: 4,
   },
 });
